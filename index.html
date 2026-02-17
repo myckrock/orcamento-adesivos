@@ -13,7 +13,7 @@
 <style>
 body{
 font-family:'Segoe UI',sans-serif;
-background:linear-gradient(100deg,#d81616,#e1d937);
+background:linear-gradient(125deg,#0ba9a9,#ffffff);
 display:flex;
 justify-content:center;
 padding:30px;
@@ -31,15 +31,15 @@ width:100%;
 padding:10px;
 border-radius:8px;
 border:none;
-background:#d81616;
+background:#0ba9a9;
 color:white;
 cursor:pointer;
 margin-top:5px;
 }
 .button:hover{
 background:white;
-color:#d81616;
-border:1px solid #d81616;
+color:#0ba9a9;
+border:1px solid #0ba9a9;
 }
 .hidden{display:none;}
 </style>
@@ -169,8 +169,11 @@ let lista=JSON.parse(localStorage.getItem("historico"))||[];
 historico.innerHTML=lista.map(item=>`
 <div style="border-bottom:1px solid #ccc;margin:10px 0;">
 <strong>${item.cliente}</strong><br>
+Folhas A4: ${item.A4}<br>
 CNPJ: ${item.cnpj}<br>
 Total: R$ ${item.valor}
+
+
 </div>`).join("");
 }
 
