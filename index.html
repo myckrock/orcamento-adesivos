@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orçamento Profissional - Adesivos</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d81616">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(100deg,#d81616,#e1d937);
+display:flex;
+justify-content:center;
+padding:30px;
+margin:0;
+}
+.container{
+background:white;
+padding:25px;
+border-radius:15px;
+width:420px;
+box-shadow:0 15px 30px rgba(0,0,0,0.2);
+}
+.button{
+width:100%;
+padding:10px;
+border-radius:8px;
+border:none;
+background:#d81616;
+color:white;
+cursor:pointer;
+margin-top:5px;
+}
+.button:hover{
+background:white;
+color:#d81616;
+border:1px solid #d81616;
+}
+.hidden{display:none;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>Orçamento de Adesivos</h2>
+
+<input type="text" id="cliente" placeholder="Nome do Cliente">
+<input type="text" id="cnpj" placeholder="CNPJ (opcional)">
+<input type="number" id="largura" placeholder="Largura (cm)">
+<input type="number" id="altura" placeholder="Altura (cm)">
+<input type="number" id="quantidade" placeholder="Quantidade">
+<input type="number" id="valorMetro" placeholder="Valor do m²">
+<input type="number" id="acrescimo" placeholder="Acréscimo (R$)">
+<input type="number" id="desconto" placeholder="Desconto (R$)">
+
+<select id="pagamento">
+<option>Pix</option>
+<option>Cartão</option>
+<option>Dinheiro</option>
+<option>Boleto</option>
+</select>
+
+<input type="file" id="logo">
+
+<button class="button" onclick="calcular()">Calcular</button>
+<button class="button" onclick="gerarPDF()">Gerar PDF</button>
+<button class="button" onclick="limparHistorico()">Limpar Histórico</button>
+
+<div id="resultado"></div>
+<div id="historico"></div>
+</div>
+
+<script>
+let ultimoResultado = {};
+let logoBase64 = null;
+
+// =======================
+// CARREGAR LOGO
+// =======================
+document.getElementById("logo").addEventListener("change", function(event){
+
+const file = event.target.files[0];
+if(!file) return;
+
+const reader = new FileReader();
+
+reader.onload = function(e){
+logoBase64 = e.target.result;
+};
+
+reader.readAsDataURL(file);
+
+});
+
+// =======================
+// CALCULAR
+// =======================
+function calcular(){
+
+let largura = parseFloat(document.getElementById("largura").value);
+let altura = parseFloat(document.getElementById("altura").value);
+let quantidade = parseInt(document.getElementById("quantidade").value);
+let valorMetro = parseFloat(document.getElementById("valorMetro").value);
+let acrescimo = parseFloat(document.getElementById("acrescimo").value) || 0;
+let desconto = parseFloat(document.getElementById("desconto").value) || 0;
+
+if(isNaN(largura)||isNaN(altura)||isNaN(quantidade)||isNaN(valorMetro)){
+resultado.innerHTML="Preencha todos os campos obrigatórios.";
+return;
+}
+
+let areaTotal=(largura/100)*(altura/100)*quantidade;
+let areaBase=0.056;
+let valorBase=0;
+let regra="";
+let A4=0;
+
+if(areaTotal<=0.241){
+A4=Math.ceil(areaTotal/areaBase);
+valorBase=A4*12.50;
+regra="Regra do A4 28x20";
+}else{
+valorBase=areaTotal*valorMetro;
+if(valorBase<75)valorBase=75;
+regra="Regra por m²";
+}
+
+let valorFinal=valorBase+acrescimo-desconto;
+if(valorFinal<0)valorFinal=0;
+
+let dataHora=new Date().toLocaleString("pt-BR");
+
+ultimoResultado={
+cliente:document.getElementById("cliente").value||"Não informado",
+cnpj:document.getElementById("cnpj").value||"Não informado",
+area:areaTotal.toFixed(3),
+valor:valorFinal.toFixed(2),
+regra:regra,
+A4:A4,
+acrescimo:acrescimo.toFixed(2),
+desconto:desconto.toFixed(2),
+pagamento:document.getElementById("pagamento").value,
+data:dataHora
+};
+
+salvarHistorico(ultimoResultado);
+
+resultado.innerHTML=`<b>Total: R$ ${valorFinal.toFixed(2)}</b>`;
+}
+
+// =======================
+// HISTÓRICO
+// =======================
+function salvarHistorico(dados){
+let lista=JSON.parse(localStorage.getItem("historico"))||[];
+lista.unshift(dados);
+localStorage.setItem("historico",JSON.stringify(lista));
+mostrarHistorico();
+}
+
+function mostrarHistorico(){
+let lista=JSON.parse(localStorage.getItem("historico"))||[];
+historico.innerHTML=lista.map(item=>`
+<div style="border-bottom:1px solid #ccc;margin:10px 0;">
+<strong>${item.cliente}</strong><br>
+CNPJ: ${item.cnpj}<br>
+Total: R$ ${item.valor}
+</div>`).join("");
+}
+
+function limparHistorico(){
+localStorage.removeItem("historico");
+mostrarHistorico();
+}
+
+// =======================
+// GERAR PDF
+// =======================
+async function gerarPDF(){
+
+if(!ultimoResultado.valor){
+alert("Calcule primeiro.");
+return;
+}
+
+const {jsPDF}=window.jspdf;
+const doc=new jsPDF();
+
+let y=20;
+
+// Logo
+if(logoBase64){
+try{
+let formato="PNG";
+if(logoBase64.includes("image/jpeg")||logoBase64.includes("image/jpg")){
+formato="JPEG";
+}
+doc.addImage(logoBase64,formato,130,10,60,30);
+}catch(e){
+console.log("Erro ao adicionar logo:",e);
+}
+}
+
+doc.text("ORÇAMENTO - ADESIVOS",20,y);
+y+=15;
+
+doc.text("Data: "+ultimoResultado.data,20,y); y+=10;
+doc.text("Cliente: "+ultimoResultado.cliente,20,y); y+=10;
+doc.text("CNPJ: "+ultimoResultado.cnpj,20,y); y+=10;
+doc.text("Regra: "+ultimoResultado.regra,20,y); y+=10;
+
+if(ultimoResultado.regra==="Regra do A4 28x20"){
+doc.text("Quantidade A4: "+ultimoResultado.A4,20,y);
+y+=10;
+}
+
+doc.text("Total: R$ "+ultimoResultado.valor,20,y);
+
+doc.save("orcamento.pdf");
+}
+
+// =======================
+// CNPJ MÁSCARA
+// =======================
+document.getElementById("cnpj").addEventListener("input",function(e){
+let v=e.target.value.replace(/\D/g,"").substring(0,14);
+v=v.replace(/^(\d{2})(\d)/,"$1.$2");
+v=v.replace(/^(\d{2})\.(\d{3})(\d)/,"$1.$2.$3");
+v=v.replace(/\.(\d{3})(\d)/,".$1/$2");
+v=v.replace(/(\d{4})(\d)/,"$1-$2");
+e.target.value=v;
+});
+
+window.onload=function(){
+mostrarHistorico();
+if("serviceWorker" in navigator){
+navigator.serviceWorker.register("service-worker.js");
+}
+};
+</script>
+
+</body>
+</html>
