@@ -1,4 +1,4 @@
-const CACHE_NAME = "orcamento-v4";
+const CACHE_NAME = "orcamento-v8";
 const urlsToCache = [
   "index.html",
   "manifest.json"
@@ -17,4 +17,5 @@ self.addEventListener("fetch", event => {
       .then(response => response || fetch(event.request))
   );
 });
+
 
