@@ -3,8 +3,8 @@
 "short_name": "Orçamento",
 "start_url": "index.html",
 "display": "standalone",
-"background_color": "#ffffff",
-"theme_color": "#d81616",
+"background_color": "#00AFEF",
+"theme_color": "#00AFEF",
 "icons": [
 {
 "src": "icon-192.png",
