@@ -167,7 +167,11 @@ let regra="";
 let A4=0;
 
 // NOVA REGRA: se largura ou altura > 41 cm, força m²
-if(largura > 41 || altura > 41){
+if(
+(largura > 41 || altura > 41) ||
+(largura > 40 && altura > 28) ||
+(altura > 40 && largura > 28)
+){
 
 valorBase = areaTotal * valorMetro;
 if(valorBase < 75) valorBase = 75;
@@ -176,9 +180,53 @@ regra = "Regra por m² (tamanho maior que 41cm)";
 }else{
 
 if(areaTotal<=0.241){
-A4=Math.ceil(areaTotal/areaBase);
-valorBase=A4*12.50;
+
+// NOVO CÁLCULO POR APROVEITAMENTO
+let larguraFolha = 20;
+let alturaFolha = 28;
+
+// Quantos adesivos cabem na folha
+let qtdLargura = Math.floor(larguraFolha / largura);
+let qtdAltura = Math.floor(alturaFolha / altura);
+
+let porFolha = qtdLargura * qtdAltura;
+
+// Segurança caso não caiba nenhum
+if(porFolha < 1){
+porFolha = 1;
+}
+
+// Quantidade base de folhas
+let folhasBase = Math.ceil(quantidade / porFolha);
+
+// ===============================
+// 🔥 REGRA CORRETA (28x20 REAL)
+// ===============================
+
+// ===============================
+// 🔥 CÁLCULO COM ROTAÇÃO AUTOMÁTICA
+// ===============================
+
+// Sem rotação (20x28)
+let normalLargura = Math.ceil(largura / 20);
+let normalAltura = Math.ceil(altura / 28);
+let normal = normalLargura * normalAltura;
+
+// Com rotação (28x20)
+let rotacionadoLargura = Math.ceil(largura / 28);
+let rotacionadoAltura = Math.ceil(altura / 20);
+let rotacionado = rotacionadoLargura * rotacionadoAltura;
+
+// Usa o melhor aproveitamento
+let folhasPorPeca = Math.min(normal, rotacionado);
+
+// Total final
+A4 = folhasBase * folhasPorPeca;
+
+// Mantém regra original
+valorBase = A4 * 12.50;
 regra="Regra do A4 28x20";
+
 }else{
 valorBase=areaTotal*valorMetro;
 if(valorBase<75)valorBase=75;
@@ -217,7 +265,7 @@ aviso.innerHTML = "Acrecente o corte";
 inputAcrescimo.classList.add("erro-acrescimo");
 
 // Valor menor ou igual a 10
-}else if(acrescimo <= 10){
+}else if(acrescimo < 10){
 aviso.innerHTML = "Valor mínimo de R$10,00";
 inputAcrescimo.classList.add("erro-acrescimo");
 }
