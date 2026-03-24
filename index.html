@@ -285,7 +285,13 @@ e.target.value=v;
 window.onload=function(){
 mostrarHistorico();
 if("serviceWorker" in navigator){
-navigator.serviceWorker.register("service-worker.js");
+navigator.serviceWorker.register("service-worker.js").then(reg => {
+
+setInterval(() => {
+reg.update(); // verifica atualização a cada tempo
+}, 10000); // 10 segundos
+
+});
 }
 };
 inputAcrescimo.addEventListener("input", function(){
