@@ -1,4 +1,4 @@
-const CACHE_NAME = "orcamento-app-v3"; // MUDE A VERSÃO SEMPRE
+const CACHE_NAME = "orcamento-app-v2"; // MUDE A VERSÃO SEMPRE
 
 const urlsToCache = [
   "/",
@@ -43,4 +43,10 @@ self.addEventListener("fetch", event => {
       })
       .catch(() => caches.match(event.request))
   );
+});
+
+self.addEventListener("message", event => {
+if(event.data.action === "skipWaiting"){
+self.skipWaiting();
+}
 });
