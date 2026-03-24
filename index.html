@@ -42,6 +42,11 @@ color:#00AFEF;
 border:1px solid #00AFEF;
 }
 .hidden{display:none;}
+
+.erro-acrescimo{
+border:2px solid red !important;
+background:#ffe6e6;
+}
 </style>
 </head>
 
@@ -50,7 +55,7 @@ border:1px solid #00AFEF;
 <div class="container">
 <h2>Orçamento de Adesivos</h2>
 
-<input type="text" id="cliente" placeholder="Nome do Cliente">
+<input type="text" id="cliente" placeholder="Nome do Cliente (opcional)">
 <input type="text" id="cnpj" placeholder="CNPJ (opcional)">
 <input type="number" id="largura" placeholder="Largura (cm)">
 <input type="number" id="altura" placeholder="Altura (cm)">
@@ -71,6 +76,7 @@ border:1px solid #00AFEF;
 <button class="button" onclick="calcular()">Calcular</button>
 <button class="button" onclick="gerarPDF()">Gerar PDF</button>
 <button class="button" onclick="limparHistorico()">Limpar Histórico</button>
+<div id="aviso" style="margin-top:10px;color:red;font-weight:bold;"></div>
 
 <div id="resultado"></div>
 <div id="historico"></div>
@@ -79,6 +85,8 @@ border:1px solid #00AFEF;
 <script>
 let ultimoResultado = {};
 let logoBase64 = null;
+const inputAcrescimo = document.getElementById("acrescimo");
+const aviso = document.getElementById("aviso");
 
 // =======================
 // CARREGAR LOGO
@@ -110,6 +118,7 @@ let valorMetro = parseFloat(document.getElementById("valorMetro").value);
 let acrescimo = parseFloat(document.getElementById("acrescimo").value) || 0;
 let desconto = parseFloat(document.getElementById("desconto").value) || 0;
 
+
 if(isNaN(largura)||isNaN(altura)||isNaN(quantidade)||isNaN(valorMetro)){
 resultado.innerHTML="Preencha todos os campos obrigatórios.";
 return;
@@ -121,6 +130,15 @@ let valorBase=0;
 let regra="";
 let A4=0;
 
+// NOVA REGRA: se largura ou altura > 41 cm, força m²
+if(largura > 41 || altura > 41){
+
+valorBase = areaTotal * valorMetro;
+if(valorBase < 75) valorBase = 75;
+regra = "Regra por m² (tamanho maior que 41cm)";
+
+}else{
+
 if(areaTotal<=0.241){
 A4=Math.ceil(areaTotal/areaBase);
 valorBase=A4*12.50;
@@ -129,6 +147,8 @@ regra="Regra do A4 28x20";
 valorBase=areaTotal*valorMetro;
 if(valorBase<75)valorBase=75;
 regra="Regra por m²";
+}
+
 }
 
 let valorFinal=valorBase+acrescimo-desconto;
@@ -148,7 +168,25 @@ desconto:desconto.toFixed(2),
 pagamento:document.getElementById("pagamento").value,
 data:dataHora
 };
+// Reset visual
+inputAcrescimo.classList.remove("erro-acrescimo");
+aviso.innerHTML = "";
 
+// REGRA A4
+if(regra === "Regra do A4 28x20"){
+
+// Campo vazio
+if(!document.getElementById("acrescimo").value){
+aviso.innerHTML = "Acrecente o corte";
+inputAcrescimo.classList.add("erro-acrescimo");
+
+// Valor menor ou igual a 10
+}else if(acrescimo <= 10){
+aviso.innerHTML = "Valor mínimo de R$10,00";
+inputAcrescimo.classList.add("erro-acrescimo");
+}
+
+}
 salvarHistorico(ultimoResultado);
 
 resultado.innerHTML=`<b>Total: R$ ${valorFinal.toFixed(2)}</b>`;
@@ -169,11 +207,15 @@ let lista=JSON.parse(localStorage.getItem("historico"))||[];
 historico.innerHTML=lista.map(item=>`
 <div style="border-bottom:1px solid #ccc;margin:10px 0;">
 <strong>${item.cliente}</strong><br>
-Folhas A4: ${item.A4}<br>
+
+${
+item.regra.includes("m²")
+? "Regra do m²"
+: "Folhas A4: " + item.A4
+}<br>
+
 CNPJ: ${item.cnpj}<br>
 Total: R$ ${item.valor}
-
-
 </div>`).join("");
 }
 
@@ -246,8 +288,28 @@ if("serviceWorker" in navigator){
 navigator.serviceWorker.register("service-worker.js");
 }
 };
+inputAcrescimo.addEventListener("input", function(){
+
+let valor = parseFloat(this.value);
+
+// Se vazio
+if(this.value === ""){
+this.classList.add("erro-acrescimo");
+aviso.innerHTML = "Acrecente o corte";
+return;
+}
+
+// Se valor válido (>10)
+if(valor > 10){
+this.classList.remove("erro-acrescimo");
+aviso.innerHTML = "";
+}else{
+this.classList.add("erro-acrescimo");
+aviso.innerHTML = "Valor mínimo de R$10,00";
+}
+
+});
 </script>
 
 </body>
 </html>
-
