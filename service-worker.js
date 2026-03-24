@@ -1,4 +1,4 @@
-const CACHE_NAME = "orcamento-app-v2"; // MUDE A VERSÃO SEMPRE
+const CACHE_NAME = "orcamento-app-v3"; // MUDE A VERSÃO SEMPRE
 
 const urlsToCache = [
   "/",
