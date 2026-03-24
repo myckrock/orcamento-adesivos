@@ -81,6 +81,32 @@ background:#ffe6e6;
 <div id="resultado"></div>
 <div id="historico"></div>
 </div>
+<div id="updateBox" class="hidden" style="
+position:fixed;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+background:#00AFEF;
+color:white;
+padding:15px 20px;
+border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,0.3);
+z-index:999;
+">
+
+<span>Nova versão disponível</span>
+
+<button onclick="atualizarApp()" style="
+margin-left:10px;
+padding:5px 10px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+">
+Atualizar
+</button>
+
+</div>
 
 <script>
 let ultimoResultado = {};
@@ -105,6 +131,16 @@ logoBase64 = e.target.result;
 reader.readAsDataURL(file);
 
 });
+//========================
+//ATUALIZAR
+//========================
+function atualizarApp(){
+if(newWorker){
+newWorker.postMessage({ action: "skipWaiting" });
+}
+
+window.location.reload();
+}
 
 // =======================
 // CALCULAR
@@ -284,12 +320,24 @@ e.target.value=v;
 
 window.onload=function(){
 mostrarHistorico();
+let newWorker;
+
 if("serviceWorker" in navigator){
 navigator.serviceWorker.register("service-worker.js").then(reg => {
 
-setInterval(() => {
-reg.update(); // verifica atualização a cada tempo
-}, 10000); // 10 segundos
+reg.addEventListener("updatefound", () => {
+
+newWorker = reg.installing;
+
+newWorker.addEventListener("statechange", () => {
+
+if(newWorker.state === "installed" && navigator.serviceWorker.controller){
+document.getElementById("updateBox").classList.remove("hidden");
+}
+
+});
+
+});
 
 });
 }
